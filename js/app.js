@@ -1,4 +1,4 @@
-const potuacao = document.querySelector('.pontuacao');
+const pontuacao = document.querySelector('.pontuacao');
 const iniciarTela = document.querySelector('.iniciarTela');
 const jogoArea = document.querySelector('.jogoArea');
 const nivel = document.querySelector('.nivel');
@@ -43,35 +43,66 @@ iniciarTela.addEventListener('click', () => {
 
     window.requestAnimationFrame(jogoJogar)
 
+    for(let i = 0; i < 5; i += 1) {
+
+        let linhaEstradaEl = document.createElement('div');
+
+        linhaEstradaEl.setAttribute('class', 'linhasEstrada');
+        linhaEstradaEl.y = (i * 150);
+        linhaEstradaEl.style.top = linhaEstradaEl.y + "px";
+
+        jogoArea.appendChild(linhaEstradaEl);
+    }
+
     let carroEl = document.createElement('div');
     carroEl.setAttribute('class', 'carro')
     jogoArea.appendChild(carroEl);
 
     jogador.x = carroEl.offsetLeft;
     jogador.y = carroEl.offsetTop;
-})
 
+    for(let i = 0; i < 3; i += 1) {
 
-function jogoJogar() {
+        let carroInimigo = document.createElement('div');
 
-    let carroEl = document.querySelector('.carro');
-    let estrada = jogoArea.getBoundingClientRect();
+        carroInimigo.setAttribute('class', 'carroInimigo');
+        carroInimigo.y = ((i + 1) * 350) * - 1;
+        carroInimigo.style.top = carroInimigo.y + "px";
+        carroInimigo.style.backgroundColor = corAleatoria();
+        carroInimigo.style.left = Math.floor(Math.random() * 350) + "px";
 
-    if (jogador.start) {
-        
-        moverLinhaEstrada();
+        jogoArea.appendChild(carroInimigo);
+    }
+});
 
+function corAleatoria() {
 
-        carroEl.style.top = jogador.y + "px";
-        carroEl.style.left = jogador.x + "px";
+    function c() {
 
-        if(chaves.ArrowUp && jogador.y > (estrada.top + 70)) jogador.y -= jogador.velocidade;
+        let hex = Math.floor(Math.random() * 256).toString(16);
 
-        
+        return ("0" + String(hex)).substr(-2);
     }
 
-    window.requestAnimationFrame(jogoJogar);
+    return "#" + c() + c() + c();
+}
 
+function emColisao(a, b) {
+
+    aRect = a.getBoundingClientRect();
+    bRect = b.getBoundingClientRect();
+
+    return !((aRect.top > bRect.bottom) || (aRect.bottom < bRect.top) || (aRect.right < bRect.left) || (aRect.left > bRect.right));
+}
+
+function emFinalJogo() {
+
+    jogador.start = false;
+    iniciarJogo.pause();
+    terminarJogo.play();
+
+    iniciarTela.classList.remove('hide');
+    iniciarTela.innerHTML = "Fim de Jogo <br> Sua pontuação final é " + jogador.pontuacao + "<br> Pressione aqui para reiniciar o jogo.";
 }
 
 function moverLinhaEstrada() {
@@ -82,12 +113,66 @@ function moverLinhaEstrada() {
 
         if (item.y >= 700) {
             
-            item.y -= 750;
+            item.y -= 750;        
         }
 
         item.y += jogador.velocidade;
         item.style.top = item.y + "px";
     });
+}
+
+function moverCarroInimigo(carroEl) {
+
+    let carrosInimigos = document.querySelectorAll(".carroInimigo");
+
+    carrosInimigos.forEach((item) => {
+
+        if (emColisao(carroEl, item)) {
+            
+            emFinalJogo();
+        }
+
+        if (item.y >= 750) {
+            
+            item.y = -300;
+            item.style.left = Math.floor(Math.random() * 350) + "px";
+        }
+
+        item.y += jogador.velocidade;
+        item.style.top = item.y + "px";
+    });
+}
+
+
+
+function jogoJogar() {
+
+    let carroEl = document.querySelector('.carro');
+    let estrada = jogoArea.getBoundingClientRect();
+
+    if (jogador.start) {
+        
+        moverLinhaEstrada();
+        moverCarroInimigo(carroEl);
+        
+        if(chaves.ArrowUp && jogador.y > (estrada.top + 70)) jogador.y -= jogador.velocidade;
+        if(chaves.ArrowDown && jogador.y < (estrada.bottom - 85)) jogador.y += jogador.velocidade;
+        if(chaves.ArrowLeft && jogador.x > 0) jogador.x -= jogador.velocidade;
+        if(chaves.ArrowRight && jogador.x < (estrada.width - 70)) jogador.x += jogador.velocidade;
+
+        carroEl.style.top = jogador.y + "px";
+        carroEl.style.left = jogador.x + "px"; 
+
+        window.requestAnimationFrame(jogoJogar);
+
+        jogador.pontuacao++;
+
+        const ps = jogador.pontuacao - 1;
+
+        ps.innerHTML = 'Pontuação: ' + ps;
+
+        
+    }
 }
 
 document.addEventListener('keydown', (e) => {
